@@ -1,0 +1,4 @@
+[wokwi]
+version = 1
+elf = "target/xtensa-esp32-none-elf/debug/little_weirdo_esp32"
+firmware = "target/xtensa-esp32-none-elf/debug/little_weirdo_esp32"

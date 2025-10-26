@@ -4,7 +4,6 @@
 use alloc::sync::Arc;
 use embassy_executor::Spawner;
 use esp_backtrace as _;
-use esp_hal::psram;:q
 use esp_hal::rtc_cntl::Rtc;
 use esp_println::println;
 use little_weirdo::synth;
@@ -25,7 +24,7 @@ async fn main(_spawner: Spawner) {
     let config = esp_hal::Config::default().with_cpu_clock(esp_hal::clock::CpuClock::_240MHz);
     let peripherals = esp_hal::init(config);
     let rtc = Rtc::new(peripherals.LPWR);
-    esp_alloc::psram_allocator!(peripherals.PSRAM, psram);
+     esp_alloc::heap_allocator!(15_000);
     println!("> performance run start");
     println!("> Heap size  = {:?} bytes", esp_alloc::HEAP.free());
     println!(
@@ -129,4 +128,5 @@ async fn main(_spawner: Spawner) {
         low = DELAY_US as i64;
     }
     println!("> performance run stop");
+    
 }
