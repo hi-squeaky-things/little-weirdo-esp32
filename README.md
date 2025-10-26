@@ -16,6 +16,6 @@ A Rust #no-std optimized wave table synthesizer for embedded devices, the esp32 
 ## How to use it
 
 ```
-$ cargo build
-$ espflash flash --monitor target/xtensa-esp32-none-elf/debug/little_weirdo_esp32
+$ cargo build --release
+$ espflash flash --monitor target/xtensa-esp32-none-elf/release/little_weirdo_esp32
 ```

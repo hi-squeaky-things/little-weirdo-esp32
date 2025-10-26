@@ -24,8 +24,8 @@ esp-println = { version = "0.13.0", features = ["esp32s3", "log"] }
 
 log = { version = "0.4.25" }
 esp-alloc = { version = "0.6.0" }
-#little_weirdo = { version = "0.1.0" }
-little_weirdo = { path = "../little-weirdo" }
+little_weirdo = { version = "0.1.0" }
+#little_weirdo = { path = "../little-weirdo" }
 
 static_cell = { version = "2.1.0", features = ["nightly"] }
 fugit = "0.3.7"

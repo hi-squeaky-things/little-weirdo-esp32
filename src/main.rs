@@ -9,6 +9,7 @@ use esp_println::println;
 use little_weirdo::synth;
 use little_weirdo::synth::data::wavetables::{BoxedWavetable, BoxedWavetables};
 use little_weirdo::synth::patch::Patch;
+use esp_hal::psram;
 extern crate alloc;
 use esp_alloc as _;
 use esp_backtrace as _;
@@ -24,7 +25,7 @@ async fn main(_spawner: Spawner) {
     let config = esp_hal::Config::default().with_cpu_clock(esp_hal::clock::CpuClock::_240MHz);
     let peripherals = esp_hal::init(config);
     let rtc = Rtc::new(peripherals.LPWR);
-     esp_alloc::heap_allocator!(15_000);
+    esp_alloc::psram_allocator!(peripherals.PSRAM, psram);
     println!("> performance run start");
     println!("> Heap size  = {:?} bytes", esp_alloc::HEAP.free());
     println!(
@@ -43,6 +44,7 @@ async fn main(_spawner: Spawner) {
     wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav7.raw")));
     wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav8.raw")));
     wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav9.raw")));
+    
     let wt = Arc::new(wt_on_heap);
 
     let patch_bytes: &[u8] = include_bytes!("../src/patches/ebass.lwp");
@@ -63,7 +65,7 @@ async fn main(_spawner: Spawner) {
     let mut high = 0;
     let mut low: i64 = DELAY_US as i64;
     let mut moment: u32 = 0;
-    for _x in 0..20 {
+    for _x in 0..5 {
         let start_time = rtc.current_time().and_utc().timestamp_micros();
         synth.load_patch(&patch);
         let stop_time = rtc.current_time().and_utc().timestamp_micros();
@@ -74,15 +76,9 @@ async fn main(_spawner: Spawner) {
         );
     }
 
-    for _x in 0..10 {
+    for _x in 0..5 {
         synth.note_on(60, 100);
-        synth.note_on(61, 100);
-
-        synth.note_on(62, 100);
-        synth.note_on(63, 100);
-        synth.note_on(64, 100);
-        synth.note_on(65, 100);
-
+    
         for n in 0..SAMPLE_RATE {
             let start_time = rtc.current_time().and_utc().timestamp_micros();
             let _output = synth.clock_and_output();
@@ -95,9 +91,8 @@ async fn main(_spawner: Spawner) {
                 };
             } else {
                 overrun += 1;
-                esp_println::println!("> ! highest process time {}µs (@{})", calculation_cost, n);
-
-                if high < calculation_cost {
+               // esp_println::println!("> ! highest process time {}µs (@{})", calculation_cost, n);
+               if high < calculation_cost {
                     high = calculation_cost;
                     moment = n;
                 };
@@ -105,12 +100,7 @@ async fn main(_spawner: Spawner) {
         }
 
         synth.note_off(60);
-        synth.note_off(61);
-        synth.note_off(62);
-        synth.note_off(63);
-        synth.note_off(64);
-        synth.note_off(65);
-
+     
         for _n in 0..SAMPLE_RATE {
             synth.clock_and_output();
         }
