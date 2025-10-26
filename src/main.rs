@@ -4,31 +4,18 @@
 use alloc::sync::Arc;
 use embassy_executor::Spawner;
 use esp_backtrace as _;
-use esp_hal::psram;
+use esp_hal::psram;:q
 use esp_hal::rtc_cntl::Rtc;
 use esp_println::println;
 use little_weirdo::synth;
 use little_weirdo::synth::data::wavetables::{BoxedWavetable, BoxedWavetables};
-use little_weirdo::synth::effects::bitcrunch::BitcrunchConfiguration;
 use little_weirdo::synth::patch::Patch;
 extern crate alloc;
 use esp_alloc as _;
 use esp_backtrace as _;
 
 use core::include_bytes;
-use little_weirdo::synth::effects::filter::FilterConfig;
-use little_weirdo::synth::effects::filter::KindOfFilter;
-use little_weirdo::synth::effects::overdrive::KindOfOverdrive;
-use little_weirdo::synth::effects::overdrive::OverdriveConfiguration;
-use little_weirdo::synth::envelope::EnvelopConfiguration;
-use little_weirdo::synth::mixer::MixerConfiguration;
-use little_weirdo::synth::patch::SynthConfiguration;
-use little_weirdo::synth::patch::SynthMode;
-use little_weirdo::synth::router::RoutingConfiguration;
-use little_weirdo::synth::router::VoiceToEnvelopRoute;
-use little_weirdo::synth::router::VoiceToLFORoute;
-use little_weirdo::synth::wavetable_oscillator::WaveTableLoFreqOscillatorConfig;
-use little_weirdo::synth::wavetable_oscillator::WaveTableOscillatorConfig;
+use postcard;
 
 const SAMPLE_RATE: u32 = 44_100;
 const DELAY_US: u32 = 1_000_000 / SAMPLE_RATE;
@@ -47,209 +34,20 @@ async fn main(_spawner: Spawner) {
     );
 
     let mut wt_on_heap = BoxedWavetables::new();
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/wav0.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/wav1.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/wav2.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/wav3.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/wav4.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/wav5.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/wav6.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/wav7.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/wav8.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/wav9.raw")));
+    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav0.raw")));
+    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav1.raw")));
+    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav2.raw")));
+    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav3.raw")));
+    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav4.raw")));
+    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav5.raw")));
+    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav6.raw")));
+    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav7.raw")));
+    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav8.raw")));
+    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav9.raw")));
     let wt = Arc::new(wt_on_heap);
 
-    let patch = Patch {
-        synth_config: SynthConfiguration {
-            mode: SynthMode::OctoPoly,
-        },
-        voices: [
-            WaveTableOscillatorConfig {
-                soundbank_index: 1,
-                glide: false,
-                glide_rate: 200,
-                detune: 0,
-                freq: 440,
-                freq_detune: 0,
-            },
-            WaveTableOscillatorConfig {
-                soundbank_index: 1,
-                glide: false,
-                glide_rate: 0,
-                detune: 0,
-                freq: 440,
-                freq_detune: 0,
-            },
-            WaveTableOscillatorConfig {
-                soundbank_index: 1,
-                glide: false,
-                glide_rate: 200,
-                detune: 0,
-                freq: 440,
-                freq_detune: 0,
-            },
-            WaveTableOscillatorConfig {
-                soundbank_index: 1,
-                glide: false,
-                glide_rate: 0,
-                detune: 0,
-                freq: 440,
-                freq_detune: 0,
-            },
-            WaveTableOscillatorConfig {
-                soundbank_index: 1,
-                glide: true,
-                glide_rate: 200,
-                detune: 0,
-                freq: 440,
-                freq_detune: 0,
-            },
-            WaveTableOscillatorConfig {
-                soundbank_index: 1,
-                glide: false,
-                glide_rate: 0,
-                detune: 0,
-                freq: 440,
-                freq_detune: 0,
-            },
-            WaveTableOscillatorConfig {
-                soundbank_index: 1,
-                glide: false,
-                glide_rate: 200,
-                detune: 0,
-                freq: 440,
-                freq_detune: 0,
-            },
-            WaveTableOscillatorConfig {
-                soundbank_index: 9,
-                glide: false,
-                glide_rate: 0,
-                detune: 0,
-                freq: 440,
-                freq_detune: 0,
-            },
-        ],
-        envelops: [
-            EnvelopConfiguration {
-                attack_time: 10,
-                decay_time: 100,
-                release_time: 300,
-                sustain_level: 90,
-            },
-            EnvelopConfiguration {
-                attack_time: 10,
-                decay_time: 100,
-                release_time: 300,
-                sustain_level: 90,
-            },
-            EnvelopConfiguration {
-                attack_time: 10,
-                decay_time: 100,
-                release_time: 300,
-                sustain_level: 90,
-            },
-            EnvelopConfiguration {
-                attack_time: 10,
-                decay_time: 100,
-                release_time: 300,
-                sustain_level: 90,
-            },
-            EnvelopConfiguration {
-                attack_time: 10,
-                decay_time: 100,
-                release_time: 300,
-                sustain_level: 90,
-            },
-            EnvelopConfiguration {
-                attack_time: 10,
-                decay_time: 100,
-                release_time: 300,
-                sustain_level: 90,
-            },
-            EnvelopConfiguration {
-                attack_time: 10,
-                decay_time: 100,
-                release_time: 300,
-                sustain_level: 90,
-            },
-            EnvelopConfiguration {
-                attack_time: 10,
-                decay_time: 100,
-                release_time: 300,
-                sustain_level: 90,
-            },
-        ],
-        lfos: [
-            WaveTableLoFreqOscillatorConfig {
-                soundbank_index: 0,
-                time: 200,
-            },
-            WaveTableLoFreqOscillatorConfig {
-                soundbank_index: 0,
-                time: 200,
-            },
-            WaveTableLoFreqOscillatorConfig {
-                soundbank_index: 0,
-                time: 200,
-            },
-            WaveTableLoFreqOscillatorConfig {
-                soundbank_index: 0,
-                time: 200,
-            },
-        ],
-        routering_config: RoutingConfiguration {
-            voices_to_envelop: [
-                VoiceToEnvelopRoute { env: 0 },
-                VoiceToEnvelopRoute { env: 1 },
-                VoiceToEnvelopRoute { env: 2 },
-                VoiceToEnvelopRoute { env: 3 },
-                VoiceToEnvelopRoute { env: 4 },
-                VoiceToEnvelopRoute { env: 5 },
-                VoiceToEnvelopRoute { env: 6 },
-                VoiceToEnvelopRoute { env: 7 },
-            ],
-            voice_to_lfo: [
-                VoiceToLFORoute {
-                    enable: false,
-                    voices: [1, 255],
-                },
-                VoiceToLFORoute {
-                    enable: false,
-                    voices: [1, 255],
-                },
-                VoiceToLFORoute {
-                    enable: false,
-                    voices: [1, 255],
-                },
-                VoiceToLFORoute {
-                    enable: false,
-                    voices: [1, 255],
-                },
-            ],
-            lfo_to_filter: false,
-            lfo_to_freq: false,
-            lfo_to_freq_amount: 0,
-        },
-        filter_config: FilterConfig {
-            cutoff_frequency: 1_000,
-            resonance: 6_000,
-            enabled: false,
-            kind_of_filter: KindOfFilter::High,
-        },
-        mixer_config: MixerConfiguration {
-            gain_voices: [10, 10, 10, 10, 10, 10, 10, 10],
-            gain_main: 20,
-        },
-        overdrive_config: OverdriveConfiguration {
-            threshold: 1000,
-            kind: KindOfOverdrive::Softer,
-            enabled: false,
-        },
-        bitcrunch_config: BitcrunchConfiguration {
-            enabled: false
-        }
-    };
-
+    let patch_bytes: &[u8] = include_bytes!("../src/patches/ebass.lwp");
+    let patch: Patch = postcard::from_bytes(patch_bytes).unwrap();
    
     let mut synth: synth::Synth = synth::Synth::new(
         SAMPLE_RATE as u16,
