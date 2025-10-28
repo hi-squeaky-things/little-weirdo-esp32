@@ -32,7 +32,8 @@ HEAP INFO
 Size: 64000
 Current usage: 12140
 Memory Layout: 
-Internal | ██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ | Used: 18% (Used 12140 of 64000, free: 51860)
+Internal | ██████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ | 
+Used: 18% (Used 12140 of 64000, free: 51860)
 
 ...
 > patch change in 7 µs (max 22µs)
