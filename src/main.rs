@@ -5,6 +5,7 @@ use alloc::sync::Arc;
 use embassy_executor::Spawner;
 use esp_backtrace as _;
 use esp_hal::rtc_cntl::Rtc;
+use esp_hal::timer::timg::TimerGroup;
 use esp_println::println;
 use little_weirdo::synth;
 use little_weirdo::synth::data::wavetables::{BoxedWavetable, BoxedWavetables};
@@ -34,11 +35,13 @@ async fn main(_spawner: Spawner) {
     heap_allocator!(#[ram(reclaimed)] size: 64000);
     
     println!("> performance run start");
-    println!("> Heap size  = {:?} bytes", esp_alloc::HEAP.free());
-    println!(
-        "> Heap used before allocation of wavetables/synth = {:?} bytes",
-        esp_alloc::HEAP.used()
+
+    let timg0 = TimerGroup::new(peripherals.TIMG0);
+    
+    esp_rtos::start(
+        timg0.timer0
     );
+
 
     let mut wt_on_heap = BoxedWavetables::new();
     wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav0.raw")));
@@ -62,10 +65,11 @@ async fn main(_spawner: Spawner) {
         &patch,
         Arc::clone(&wt),
     );
-    println!(
-        "> Heap used after allocation of wavetables/synth = {:?} bytes",
-        esp_alloc::HEAP.used()
-    );
+  
+
+      println!("{}",
+        esp_alloc::HEAP.stats()
+        );
 
     let mut sum = 0;
     let mut overrun = 0;
@@ -125,5 +129,4 @@ async fn main(_spawner: Spawner) {
         low = DELAY_US as u64;
     }
     println!("> performance run stop");
-    
 }
