@@ -3,6 +3,7 @@
  ⠧⠤⠇⠸ ⠸ ⠧⠤⠧⠤ ⠟⠻⠧⠤⠇⠇⠱⠧⠜⠣⠜
 on the ESP32
 ```
+![GitHub License](https://img.shields.io/github/license/hi-squeaky-things/little-weirdo-esp32)
 
 A Rust #no-std optimized wave table synthesizer for embedded devices, the esp32 in this case.
 
