@@ -23,7 +23,6 @@ use esp_alloc::{self as _, heap_allocator};
 use esp_backtrace as _;
 
 use core::include_bytes;
-use postcard;
 
 const SAMPLE_RATE: u32 = 44_100;
 const DELAY_US: u32 = 1_000_000 / SAMPLE_RATE;
