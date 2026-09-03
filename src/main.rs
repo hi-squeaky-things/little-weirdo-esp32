@@ -7,9 +7,15 @@ use esp_backtrace as _;
 use esp_hal::rtc_cntl::Rtc;
 use esp_hal::timer::timg::TimerGroup;
 use esp_println::println;
-use little_weirdo::synth;
-use little_weirdo::synth::data::wavetables::{BoxedWavetable, BoxedWavetables};
-use little_weirdo::synth::patch::Patch;
+use little_weirdo::synth::{
+    self,
+    data::{
+        patches::{BoxedPatch, BoxedPatches},
+        waveforms::{BoxedWaveform, BoxedWaveforms},
+    },
+    patch::Patch,
+};
+
 use esp_hal::ram;
 use esp_hal::clock::CpuClock;
 extern crate alloc;
@@ -43,27 +49,31 @@ async fn main(_spawner: Spawner) {
     );
 
 
-    let mut wt_on_heap = BoxedWavetables::new();
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav0.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav1.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav2.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav3.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav4.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav5.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav6.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav7.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav8.raw")));
-    wt_on_heap.add(BoxedWavetable::new(include_bytes!("../src/soundbank/wav9.raw")));
+    let mut oscillator_waveforms = BoxedWaveforms::new();
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/000_sample.raw")));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/001_sample.raw")));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/002_sample.raw")));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/003_sample.raw")));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/004_sample.raw")));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/005_sample.raw")));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/006_sample.raw")));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/007_sample.raw")));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/008_sample.raw")));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/009_sample.raw")));
     
-    let wt = Arc::new(wt_on_heap);
+   let oscillator_waveforms_on_heap = Arc::new(oscillator_waveforms);
 
-    let patch_bytes: &[u8] = include_bytes!("../src/patches/ebass.lwp");
+   let mut patches = BoxedPatches::new();
+    let patch_bytes: &[u8] = include_bytes!("../src/patches/bass.lwp");
     let patch: Patch = postcard::from_bytes(patch_bytes).unwrap();
-   
+    patches.add(BoxedPatch::new(patch));
+    let patches = Arc::new(patches);
+
     let mut synth: synth::Synth = synth::Synth::new(
         SAMPLE_RATE as u16,
-        &patch,
-        Arc::clone(&wt),
+        0,
+        patches,
+        Arc::clone(&oscillator_waveforms_on_heap),
     );
   
 
@@ -78,7 +88,7 @@ async fn main(_spawner: Spawner) {
     let mut moment: u32 = 0;
     for _x in 0..5 {
         let start_time = rtc.current_time_us();
-        synth.load_patch(&patch);
+        synth.load_patch(0);
         let stop_time = rtc.current_time_us();
         esp_println::println!(
             "> patch change in {} µs (max {}µs)",
