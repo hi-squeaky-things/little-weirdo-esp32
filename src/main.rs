@@ -16,8 +16,8 @@ use little_weirdo::synth::{
     patch::Patch,
 };
 
-use esp_hal::ram;
 use esp_hal::clock::CpuClock;
+use esp_hal::ram;
 extern crate alloc;
 use esp_alloc::{self as _, heap_allocator};
 use esp_backtrace as _;
@@ -34,36 +34,53 @@ async fn main(_spawner: Spawner) {
     let config = esp_hal::Config::default().with_cpu_clock(CpuClock::max());
     esp_println::println!("-:= > Set CPU Speed to {:?}", config.cpu_clock());
     let peripherals = esp_hal::init(config);
-    
+
     let rtc = Rtc::new(peripherals.LPWR);
-   
+
     // Use 64kB in dram2_seg for the heap, which is otherwise unused.
     heap_allocator!(#[ram(reclaimed)] size: 64000);
-    
+
     println!("> performance run start");
 
     let timg0 = TimerGroup::new(peripherals.TIMG0);
-    
-    esp_rtos::start(
-        timg0.timer0
-    );
 
+    esp_rtos::start(timg0.timer0);
 
     let mut oscillator_waveforms = BoxedWaveforms::new();
-    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/000_sample.raw")));
-    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/001_sample.raw")));
-    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/002_sample.raw")));
-    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/003_sample.raw")));
-    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/004_sample.raw")));
-    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/005_sample.raw")));
-    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/006_sample.raw")));
-    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/007_sample.raw")));
-    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/008_sample.raw")));
-    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!("../src/waveforms/009_sample.raw")));
-    
-   let oscillator_waveforms_on_heap = Arc::new(oscillator_waveforms);
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!(
+        "../src/waveforms/000_sample.raw"
+    )));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!(
+        "../src/waveforms/001_sample.raw"
+    )));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!(
+        "../src/waveforms/002_sample.raw"
+    )));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!(
+        "../src/waveforms/003_sample.raw"
+    )));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!(
+        "../src/waveforms/004_sample.raw"
+    )));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!(
+        "../src/waveforms/005_sample.raw"
+    )));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!(
+        "../src/waveforms/006_sample.raw"
+    )));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!(
+        "../src/waveforms/007_sample.raw"
+    )));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!(
+        "../src/waveforms/008_sample.raw"
+    )));
+    oscillator_waveforms.add(BoxedWaveform::new(include_bytes!(
+        "../src/waveforms/009_sample.raw"
+    )));
 
-   let mut patches = BoxedPatches::new();
+    let oscillator_waveforms_on_heap = Arc::new(oscillator_waveforms);
+
+    let mut patches = BoxedPatches::new();
     let patch_bytes: &[u8] = include_bytes!("../src/patches/bass.lwp");
     let patch: Patch = postcard::from_bytes(patch_bytes).unwrap();
     patches.add(BoxedPatch::new(patch));
@@ -75,11 +92,8 @@ async fn main(_spawner: Spawner) {
         patches,
         Arc::clone(&oscillator_waveforms_on_heap),
     );
-  
 
-      println!("{}",
-        esp_alloc::HEAP.stats()
-        );
+    println!("{}", esp_alloc::HEAP.stats());
 
     let mut sum = 0;
     let mut overrun = 0;
@@ -99,7 +113,7 @@ async fn main(_spawner: Spawner) {
 
     for _x in 0..5 {
         synth.note_on(60, 100);
-    
+
         for n in 0..SAMPLE_RATE {
             let start_time = rtc.current_time_us();
             let _output = synth.clock_and_output();
@@ -112,8 +126,8 @@ async fn main(_spawner: Spawner) {
                 };
             } else {
                 overrun += 1;
-               // esp_println::println!("> ! highest process time {}µs (@{})", calculation_cost, n);
-               if high < calculation_cost {
+                // esp_println::println!("> ! highest process time {}µs (@{})", calculation_cost, n);
+                if high < calculation_cost {
                     high = calculation_cost;
                     moment = n;
                 };
@@ -121,7 +135,7 @@ async fn main(_spawner: Spawner) {
         }
 
         synth.note_off(60);
-     
+
         for _n in 0..SAMPLE_RATE {
             synth.clock_and_output();
         }
